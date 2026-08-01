@@ -8,6 +8,7 @@ from sglang.test.run_eval import run_eval
 from sglang.test.test_utils import (
     DEFAULT_TIMEOUT_FOR_SERVER_LAUNCH,
     DEFAULT_URL_FOR_TEST,
+    CustomTestCase,
     popen_launch_server,
     try_cached_model,
 )
@@ -139,6 +140,11 @@ class TestMXFP8GemmFlashinferTrtllm(MXFP8GemmBase, unittest.TestCase):
 @unittest.skipIf(get_device_sm() < 100, "Test requires CUDA SM 100 or higher")
 class TestMXFP8GemmFlashinferCutlass(MXFP8GemmBase, unittest.TestCase):
     backend = "flashinfer_cutlass"
+
+
+@unittest.skipIf(get_device_sm() not in (100, 103), "Test requires CUDA SM 100/103")
+class TestMXFP8GemmCuteDSL(MXFP8GemmBase, CustomTestCase):
+    backend = "flashinfer_cutedsl"
 
 
 if __name__ == "__main__":
