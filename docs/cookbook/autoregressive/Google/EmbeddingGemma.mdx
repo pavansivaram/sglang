@@ -4,6 +4,8 @@ description: Serve Google's EmbeddingGemma text embedding model with SGLang.
 tag: NEW
 ---
 
+import { EmbeddingGemmaDeployment } from '/src/snippets/autoregressive/embeddinggemma-deployment.jsx';
+
 ## Overview
 
 [EmbeddingGemma](https://huggingface.co/google/embeddinggemma-300m) is Google's 300M-parameter text embedding model. SGLang detects its bidirectional Gemma 3 encoder, applies normalized mean pooling, and serves embeddings through the OpenAI-compatible `/v1/embeddings` endpoint.
@@ -12,7 +14,7 @@ On NVIDIA CUDA, SGLang uses breakable CUDA graph (BCG) for its complete prefill 
 
 ## Prerequisites
 
-- NVIDIA CUDA GPU.
+- NVIDIA CUDA GPU, or Intel Arc Pro B-Series GPU(codename: BMG (Battlemage)).
 - A Hugging Face account that has accepted the [EmbeddingGemma license](https://huggingface.co/google/embeddinggemma-300m).
 - A Hugging Face access token. Export it before starting the server so it can download the gated checkpoint:
 
@@ -25,6 +27,8 @@ Install an SGLang build that includes EmbeddingGemma support:
 ```bash
 pip install 'git+https://github.com/sgl-project/sglang.git#subdirectory=python'
 ```
+
+For Intel Arc Pro B-Series GPUs (BMG), follow the [XPU installation guide](../../../docs/hardware-platforms/xpu#installation) instead.
 
 ## Start the server
 
@@ -54,6 +58,13 @@ sglang serve \
 
 EmbeddingGemma automatically enables batch tokenization for list-valued
 embedding requests, so do not add a separate tokenizer batching flag.
+
+### Intel Arc Pro B-Series GPUs (BMG)
+
+On Intel Arc Pro B-Series GPUs (BMG), serve EmbeddingGemma on XPU with a
+single GPU:
+
+<EmbeddingGemmaDeployment />
 
 ## Create embeddings
 
