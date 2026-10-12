@@ -1,7 +1,7 @@
 export const config = {
   modelName: "Muse Glimmer",
 
-  supportedHardware: ["b200", "h200", "rtx5090", "rtx6000", "dgx-spark", "mac"],
+  supportedHardware: ["b200", "h200", "rtx5090", "rtx6000", "dgx-spark", "mac", "arc_b"],
 
   hardware: [
     // RTX 5090 and RTX PRO 6000 are Blackwell-generation but not in the shared
@@ -15,6 +15,8 @@ export const config = {
     // Apple Silicon Mac (MLX backend, unified memory). Benchmarked on an
     // M5 Pro 64GB; the q4km-gs128 artifact fits a 48GB machine.
     { id: "mac",       label: "Apple Silicon", vram: "48GB+", vendor: "apple" },
+    // Intel Arc Pro B-Series GPUs (codename: BMG (Battlemage)), served on XPU.
+    { id: "arc_b",     label: "BMG",          vram: "24GB",  vendor: "intel" },
   ],
 
   variants: [{ id: "default", label: "Default" }],
@@ -32,7 +34,8 @@ export const config = {
   ],
 
   // No Docker path on Apple Silicon — the MLX backend runs native-only.
-  runModes: (s) => (s.hw === "mac" ? ["python"] : ["python", "docker"]),
+  // BMG is documented for the native (Python) install only.
+  runModes: (s) => (s.hw === "mac" || s.hw === "arc_b" ? ["python"] : ["python", "docker"]),
 
   strategies: [
     { id: "standard", label: "Standard" },
@@ -50,8 +53,9 @@ export const config = {
       showWhen: (s) => s.quant !== "gguf" && !(s.quant || "").startsWith("mlx-"),
       options: [
         // NVFP4 ships with no vision weights despite config.json declaring
-        // vision_config, so "Image + text" only shows for bf16.
-        { id: "mm", label: "Image + text", showWhen: (s) => s.quant === "bf16" },
+        // vision_config, so "Image + text" only shows for bf16. BMG serves
+        // the BF16 checkpoint text-only.
+        { id: "mm", label: "Image + text", showWhen: (s) => s.quant === "bf16" && s.hw !== "arc_b" },
         {
           id: "text",
           label: "Text only",
@@ -504,6 +508,25 @@ export const config = {
         "--speculative-draft-model-quantization fp8",
         "--kv-cache-dtype fp8_e4m3",
         "--mem-fraction-static 0.85",
+        "--host {{HOST_IP}}",
+        "--port {{PORT}}",
+      ],
+    },
+
+    // Intel Arc Pro B-Series (BMG): BF16 on XPU across 4 GPUs, text only
+    // (--language-model-only comes from the modality overlay).
+    {
+      match: { hw: "arc_b", variant: "default", quant: "bf16", strategy: "standard", nodes: "single" },
+      verified: true,
+      env: [],
+      flags: [
+        "--model-path {{MODEL_NAME}}",
+        "--dtype bfloat16",
+        "--device xpu",
+        "--tp 4",
+        "--attention-backend intel_xpu",
+        "--reasoning-parser muse",
+        "--tool-call-parser muse",
         "--host {{HOST_IP}}",
         "--port {{PORT}}",
       ],

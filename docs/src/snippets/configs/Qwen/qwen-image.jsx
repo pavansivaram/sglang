@@ -7,11 +7,16 @@ export const config = (() => {
     const flags = ["--model-path " + modelOf(s)];
     if (s.hw === "a2") flags.push("--num-gpus 1");
     else if (s.hw === "a3") flags.push("--tp-size 1", "--sp-degree 2", "--num-gpus 2");
+    else if (s.hw === "arc_b") flags.push("--num-gpus 4", "--tp-size 4");
     else flags.push("--ulysses-degree=1", "--ring-degree=1");
     return {
       flags,
-      gpus: s.hw === "a3" ? 2 : 1,
-      topology: { tp_size: 1, ulysses_degree: s.hw === "a3" ? 2 : 1, ring_degree: 1 },
+      gpus: s.hw === "a3" ? 2 : s.hw === "arc_b" ? 4 : 1,
+      topology: {
+        tp_size: s.hw === "arc_b" ? 4 : 1,
+        ulysses_degree: s.hw === "a3" ? 2 : 1,
+        ring_degree: 1,
+      },
       warnings: s.precision === "nvfp4" ? ["NVFP4 is approximate; evaluate image quality against BF16."] : [],
     };
   };
@@ -27,10 +32,11 @@ export const config = (() => {
   };
   const config = {
     modelName: "Qwen-Image",
-    supportedHardware: ["b200", "b300", "h200", "h100", "mi300x", "mi325x", "mi355x", "a2", "a3"],
+    supportedHardware: ["b200", "b300", "h200", "h100", "mi300x", "mi325x", "mi355x", "a2", "a3", "arc_b"],
     hardware: [
       { id: "a2", label: "Ascend A2", vram: "", vendor: "npu" },
       { id: "a3", label: "Ascend A3", vram: "2 NPUs / card", vendor: "npu" },
+      { id: "arc_b", label: "Intel BMG", vram: "", vendor: "intel" },
     ],
     groupHardware: false,
     matchDims: [],
@@ -50,18 +56,20 @@ export const config = (() => {
       defaultSelection: defaults,
       resource: {
         limits: { nodes: { min: 1, max: 1 }, gpus_per_node: { min: 1, max: 8 } },
-        verifiedRecipes: ["b200", "b300", "h200", "h100", "mi300x", "mi325x", "mi355x", "a2", "a3"].map((hw) => {
-          const s = { ...defaults, hw };
-          const p = plan(s);
-          return {
-            ...s,
-            id: hw + "-documented",
-            gpus_per_node: p.gpus,
-            ...p.topology,
-            default: true,
-            unverified: true,
-          };
-        }),
+        verifiedRecipes: ["b200", "b300", "h200", "h100", "mi300x", "mi325x", "mi355x", "a2", "a3", "arc_b"].map(
+          (hw) => {
+            const s = { ...defaults, hw };
+            const p = plan(s);
+            return {
+              ...s,
+              id: hw + "-documented",
+              gpus_per_node: p.gpus,
+              ...p.topology,
+              default: true,
+              unverified: true,
+            };
+          },
+        ),
         autoTopology: (s) => plan(s).topology,
         validateTopology: (s, t) => {
           const p = plan(s);

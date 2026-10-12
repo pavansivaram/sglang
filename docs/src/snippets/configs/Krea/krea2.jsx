@@ -1,9 +1,10 @@
 export const config = (() => {
+  const checkpointOf = (s) => (s.hw === "arc_b" ? "turbo" : s.checkpoint || "turbo");
   const modelOf = (s) =>
     ({
       turbo: "krea/Krea-2-Turbo",
       raw: "krea/Krea-2-Raw",
-    })[s.checkpoint || "turbo"];
+    })[checkpointOf(s)];
   const plan = (s) => {
     const flags = ["--model-path " + modelOf(s), ...["--port {{PORT}}"]];
     let gpus = 1;
@@ -11,6 +12,12 @@ export const config = (() => {
     const env = [];
     const warnings = [];
     const errors = [];
+    if (s.hw === "arc_b") {
+      gpus = 4;
+      t = { tp_size: 4, ulysses_degree: 1, ring_degree: 1 };
+      flags.splice(1, 0, "--num-gpus 4", "--tp-size 4");
+      return { flags, gpus, topology: t, env, warnings, errors };
+    }
     gpus = Number(s.gpus_per_node);
     flags.splice(1, 0, "--num-gpus " + gpus);
     if (gpus === 2) {
@@ -37,8 +44,11 @@ export const config = (() => {
   };
   const config = {
     modelName: "Krea-2",
-    supportedHardware: ["h200", "cuda"],
-    hardware: [{ id: "cuda", label: "NVIDIA CUDA", vram: "", vendor: "nvidia" }],
+    supportedHardware: ["h200", "cuda", "arc_b"],
+    hardware: [
+      { id: "cuda", label: "NVIDIA CUDA", vram: "", vendor: "nvidia" },
+      { id: "arc_b", label: "Intel BMG", vram: "", vendor: "intel" },
+    ],
     groupHardware: false,
     matchDims: [],
     overlayDims: [
@@ -49,13 +59,14 @@ export const config = (() => {
         default: "turbo",
         options: [
           { id: "turbo", label: "Krea-2-Turbo" },
-          { id: "raw", label: "Krea-2-Raw" },
+          { id: "raw", label: "Krea-2-Raw", showWhen: (s) => s.hw !== "arc_b" },
         ],
       },
       {
         id: "parallel",
         title: "Parallelism",
         scope: "serve",
+        showWhen: (s) => s.hw !== "arc_b",
         default: "sp",
         options: [
           { id: "sp", label: "Ulysses" },
@@ -67,7 +78,7 @@ export const config = (() => {
       defaultSelection: defaults,
       resource: {
         limits: { nodes: { min: 1, max: 1 }, gpus_per_node: { min: 1, max: 4 } },
-        verifiedRecipes: ["h200", "cuda"].map((hw) => {
+        verifiedRecipes: ["h200", "cuda", "arc_b"].map((hw) => {
           const s = { ...defaults, hw };
           const p = plan(s);
           return {

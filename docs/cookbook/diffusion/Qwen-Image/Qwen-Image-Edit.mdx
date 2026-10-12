@@ -14,7 +14,7 @@ import { config } from '/src/snippets/configs/Qwen/qwen-image-edit.jsx';
 
 ## 1. Quick start
 
-Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform.
+Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform. For Intel Arc Pro B-Series GPUs (BMG), follow the [XPU installation guide](/docs/hardware-platforms/xpu#installation) instead.
 
 <a id="2-sglang-diffusion-installation" />
 
@@ -86,6 +86,18 @@ single-GPU arithmetic order, preserving BF16 rounding and alpha values in the
 validated fixed-seed example. Each GPU still holds a full DiT replica, so CFG
 parallelism reduces request latency without reducing the model memory needed
 on each GPU.
+
+### 3.4 Intel Arc Pro B-Series GPUs (BMG)
+
+On Intel Arc Pro B-Series GPUs (BMG), serve Qwen-Image-Edit-2511 with TP4 on four GPUs:
+
+```bash Command
+sglang serve \
+  --model-path Qwen/Qwen-Image-Edit-2511 \
+  --num-gpus 4 \
+  --tp-size 4 \
+  --port 30000
+```
 
 ## 4. API Usage
 

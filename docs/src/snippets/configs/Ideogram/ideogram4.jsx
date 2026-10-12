@@ -1,4 +1,5 @@
 export const config = (() => {
+  const checkpointOf = (s) => (s.hw === "arc_b" ? "instant" : s.checkpoint || "nf4");
   const modelOf = (s) =>
     ({
       nf4: "ideogram-ai/ideogram-4-nf4",
@@ -6,18 +7,23 @@ export const config = (() => {
       nvfp4: "Comfy-Org/Ideogram-4",
       fast: "fal/ideogram-v4-fast",
       instant: "fal/ideogram-v4-instant",
-    })[s.checkpoint || "nf4"];
+    })[checkpointOf(s)];
   const plan = (s) => {
-    const flags = ["--model-path " + modelOf(s), ...["--num-gpus 1", "--performance-mode auto", "--port {{PORT}}"]];
+    const flags = ["--model-path " + modelOf(s)];
     let gpus = 1;
     let t = { tp_size: 1, ulysses_degree: 1, ring_degree: 1 };
+    if (s.hw === "arc_b") {
+      gpus = 2;
+      t = { tp_size: 2, ulysses_degree: 1, ring_degree: 1 };
+      flags.push("--num-gpus 2", "--tp-size 2", "--port {{PORT}}");
+    } else flags.push("--num-gpus 1", "--performance-mode auto", "--port {{PORT}}");
     const env = [];
     const warnings = [];
     const errors = [];
     env.push("HF_TOKEN=$HF_TOKEN");
-    if (s.checkpoint === "nvfp4" && s.hw !== "b200")
+    if (checkpointOf(s) === "nvfp4" && s.hw !== "b200")
       errors.push("The documented NVFP4 recipe requires Blackwell; select B200.");
-    if (s.checkpoint === "fast")
+    if (checkpointOf(s) === "fast")
       warnings.push(
         "Floating-point Fast inference bypasses its intended NVFP4 path and may degrade quality; use Instant for local inference.",
       );
@@ -35,8 +41,11 @@ export const config = (() => {
   };
   const config = {
     modelName: "Ideogram 4",
-    supportedHardware: ["cuda", "b200"],
-    hardware: [{ id: "cuda", label: "NVIDIA CUDA", vram: "", vendor: "nvidia" }],
+    supportedHardware: ["cuda", "b200", "arc_b"],
+    hardware: [
+      { id: "cuda", label: "NVIDIA CUDA", vram: "", vendor: "nvidia" },
+      { id: "arc_b", label: "Intel BMG", vram: "", vendor: "intel" },
+    ],
     groupHardware: false,
     matchDims: [],
     overlayDims: [
@@ -46,10 +55,10 @@ export const config = (() => {
         scope: "base",
         default: "nf4",
         options: [
-          { id: "nf4", label: "ideogram-4-nf4" },
-          { id: "fp8", label: "ideogram-4-fp8" },
-          { id: "nvfp4", label: "Ideogram-4" },
-          { id: "fast", label: "ideogram-v4-fast" },
+          { id: "nf4", label: "ideogram-4-nf4", showWhen: (s) => s.hw !== "arc_b" },
+          { id: "fp8", label: "ideogram-4-fp8", showWhen: (s) => s.hw !== "arc_b" },
+          { id: "nvfp4", label: "Ideogram-4", showWhen: (s) => s.hw !== "arc_b" },
+          { id: "fast", label: "ideogram-v4-fast", showWhen: (s) => s.hw !== "arc_b" },
           { id: "instant", label: "ideogram-v4-instant" },
         ],
       },
@@ -57,8 +66,8 @@ export const config = (() => {
     commandBuilder: {
       defaultSelection: defaults,
       resource: {
-        limits: { nodes: { min: 1, max: 1 }, gpus_per_node: { min: 1, max: 1 } },
-        verifiedRecipes: ["cuda", "b200"].map((hw) => {
+        limits: { nodes: { min: 1, max: 1 }, gpus_per_node: { min: 1, max: 2 } },
+        verifiedRecipes: ["cuda", "b200", "arc_b"].map((hw) => {
           const s = { ...defaults, hw };
           const p = plan(s);
           return {
@@ -77,7 +86,7 @@ export const config = (() => {
           if (!config.supportedHardware.includes(s.hw)) errors.push("Choose a listed hardware platform.");
           if (Number(s.nodes) !== 1) errors.push("This recipe covers one node.");
           const count = Number(s.gpus_per_node);
-          if (!Number.isInteger(count) || count < 1 || count > 1)
+          if (!Number.isInteger(count) || count < 1 || count > 2)
             errors.push("Choose an integer GPU count within the documented limits.");
           if (Number(s.gpus_per_node) !== p.gpus) errors.push("This recipe requires " + p.gpus + " GPUs / node.");
           if (["tp_size", "ulysses_degree", "ring_degree"].some((key) => Number(t[key]) !== p.topology[key]))
@@ -143,7 +152,7 @@ export const config = (() => {
               n: 1,
               response_format: "b64_json",
               ...{
-                prompt: ["fast", "instant"].includes(s.checkpoint)
+                prompt: ["fast", "instant"].includes(checkpointOf(s))
                   ? JSON.stringify({
                       high_level_description:
                         "A bold typographic poster centered on the exact words INSTANT BY FAL, printed in black and electric orange on warm white paper.",
@@ -161,7 +170,7 @@ export const config = (() => {
                   : "A cinematic poster of a quiet bookstore at dusk with elegant hand-lettered signage",
                 size: "1024x1024",
                 seed: 0,
-                ...(!["fast", "instant"].includes(s.checkpoint) ? { preset: "V4_QUALITY_48" } : {}),
+                ...(!["fast", "instant"].includes(checkpointOf(s)) ? { preset: "V4_QUALITY_48" } : {}),
               },
             },
             null,

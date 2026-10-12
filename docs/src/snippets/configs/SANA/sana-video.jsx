@@ -4,9 +4,15 @@ export const config = (() => {
       default: "Efficient-Large-Model/SANA-Video_2B_480p_diffusers",
     })[s.checkpoint || "default"];
   const plan = (s) => {
-    const flags = ["--model-path " + modelOf(s), ...["--port {{PORT}}"]];
+    const flags = ["--model-path " + modelOf(s)];
     let gpus = 1;
     let t = { tp_size: 1, ulysses_degree: 1, ring_degree: 1 };
+    if (s.hw === "arc_b") {
+      gpus = 4;
+      t = { tp_size: 4, ulysses_degree: 1, ring_degree: 1 };
+      flags.push("--num-gpus 4", "--tp-size 4");
+    }
+    flags.push("--port {{PORT}}");
     const env = [];
     const warnings = [];
     const errors = [];
@@ -23,16 +29,19 @@ export const config = (() => {
   };
   const config = {
     modelName: "SANA-Video",
-    supportedHardware: ["cuda"],
-    hardware: [{ id: "cuda", label: "NVIDIA CUDA", vram: "", vendor: "nvidia" }],
+    supportedHardware: ["cuda", "arc_b"],
+    hardware: [
+      { id: "cuda", label: "NVIDIA CUDA", vram: "", vendor: "nvidia" },
+      { id: "arc_b", label: "Intel BMG", vram: "", vendor: "intel" },
+    ],
     groupHardware: false,
     matchDims: [],
     overlayDims: [],
     commandBuilder: {
       defaultSelection: defaults,
       resource: {
-        limits: { nodes: { min: 1, max: 1 }, gpus_per_node: { min: 1, max: 1 } },
-        verifiedRecipes: ["cuda"].map((hw) => {
+        limits: { nodes: { min: 1, max: 1 }, gpus_per_node: { min: 1, max: 4 } },
+        verifiedRecipes: ["cuda", "arc_b"].map((hw) => {
           const s = { ...defaults, hw };
           const p = plan(s);
           return {
@@ -51,7 +60,7 @@ export const config = (() => {
           if (!config.supportedHardware.includes(s.hw)) errors.push("Choose a listed hardware platform.");
           if (Number(s.nodes) !== 1) errors.push("This recipe covers one node.");
           const count = Number(s.gpus_per_node);
-          if (!Number.isInteger(count) || count < 1 || count > 1)
+          if (!Number.isInteger(count) || count < 1 || count > 4)
             errors.push("Choose an integer GPU count within the documented limits.");
           if (Number(s.gpus_per_node) !== p.gpus) errors.push("This recipe requires " + p.gpus + " GPUs / node.");
           if (["tp_size", "ulysses_degree", "ring_degree"].some((key) => Number(t[key]) !== p.topology[key]))

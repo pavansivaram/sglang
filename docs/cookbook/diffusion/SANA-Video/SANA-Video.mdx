@@ -14,7 +14,7 @@ import { config } from '/src/snippets/configs/SANA/sana-video.jsx';
 
 ## 1. Quick start
 
-Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform.
+Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform. For Intel Arc Pro B-Series GPUs (BMG), follow the [XPU installation guide](/docs/hardware-platforms/xpu#installation) instead.
 
 <a id="2-installation" />
 
@@ -44,6 +44,18 @@ from the prompt with an optional `motion score: N.` suffix.
 ```bash Command
 sglang serve \
   --model-path Efficient-Large-Model/SANA-Video_2B_480p_diffusers \
+  --port 30010
+```
+
+### Intel Arc Pro B-Series GPUs (BMG)
+
+On Intel Arc Pro B-Series GPUs (BMG), serve SANA-Video with TP4 on four GPUs:
+
+```bash Command
+sglang serve \
+  --model-path Efficient-Large-Model/SANA-Video_2B_480p_diffusers \
+  --num-gpus 4 \
+  --tp-size 4 \
   --port 30010
 ```
 

@@ -14,7 +14,7 @@ import { config } from '/src/snippets/configs/Krea/krea2.jsx';
 
 ## 1. Quick start
 
-Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform.
+Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform. For Intel Arc Pro B-Series GPUs (BMG), follow the [XPU installation guide](/docs/hardware-platforms/xpu#installation) instead.
 
 <a id="2-sglang-diffusion-installation" />
 
@@ -88,6 +88,18 @@ TP=2 × SP=2 reaches ~2.8× on 4 GPUs. **Choosing:** on memory-constrained GPUs 
 `--tp-size` (it shards the ~24 GB DiT, e.g. ~38 GB → ~27 GB per GPU on 2 GPUs); on
 large-VRAM GPUs sequence parallelism is marginally faster and numerically exact, and
 the two compose for the highest throughput.
+
+### 3.4 Intel Arc Pro B-Series GPUs (BMG)
+
+On Intel Arc Pro B-Series GPUs (BMG), serve Krea-2-Turbo with TP4 on four GPUs:
+
+```bash Command
+sglang serve \
+  --model-path krea/Krea-2-Turbo \
+  --num-gpus 4 \
+  --tp-size 4 \
+  --port 30000
+```
 
 ## 4. API Usage
 

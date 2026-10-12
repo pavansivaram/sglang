@@ -1,6 +1,6 @@
 export const config = (() => {
   const modelOf = (s) =>
-    "black-forest-labs/" + (s.version === "flux2-dev" || s.hw === "arc_b" ? "FLUX.2-dev" : "FLUX.1-dev");
+    "black-forest-labs/" + (s.version === "flux2-dev" ? "FLUX.2-dev" : "FLUX.1-dev");
   const plan = (s) => {
     const flags = ["--model-path " + modelOf(s)];
     let gpus = 1;
@@ -49,7 +49,7 @@ export const config = (() => {
         scope: "base",
         default: "flux1-dev",
         options: [
-          { id: "flux1-dev", label: "FLUX.1-dev", showWhen: (s) => s.hw !== "arc_b" },
+          { id: "flux1-dev", label: "FLUX.1-dev" },
           { id: "flux2-dev", label: "FLUX.2-dev" },
         ],
       },

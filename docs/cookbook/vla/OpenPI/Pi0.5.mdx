@@ -45,7 +45,7 @@ cd sglang
 pip install -e "python[diffusion]"
 ```
 
-For general environment setup, see the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation).
+For general environment setup, see the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation). For Intel Arc Pro B-Series GPUs (BMG), follow the [XPU installation guide](/docs/hardware-platforms/xpu#installation) instead.
 
 ## 3. Model Deployment
 
@@ -69,7 +69,31 @@ sglang serve lerobot/pi05_libero_base \
 
 These registered LeRobot checkpoints dispatch to the native `multimodal_gen` Pi0.5 pipeline automatically. The `--pipeline` / `--pipeline-class-name` flag is only an advanced override for local or private checkpoints that cannot be resolved from the model registry. Pi0.5 serving does not start a second SRT LLM serving engine.
 
-### 3.1 Action Request Schema
+### 3.1 Intel Arc Pro B-Series GPUs (BMG)
+
+On Intel Arc Pro B-Series GPUs (BMG), serve the base Pi0.5 policy with TP4 on four GPUs:
+
+```bash Command
+sglang serve lerobot/pi05_base \
+  --model-type diffusion \
+  --num-gpus 4 \
+  --tp-size 4 \
+  --host 127.0.0.1 \
+  --port 30000
+```
+
+Serve the LIBERO checkpoint with the same configuration:
+
+```bash Command
+sglang serve lerobot/pi05_libero_base \
+  --model-type diffusion \
+  --num-gpus 4 \
+  --tp-size 4 \
+  --host 127.0.0.1 \
+  --port 30000
+```
+
+### 3.2 Action Request Schema
 
 | Field | Type | Description |
 | --- | --- | --- |

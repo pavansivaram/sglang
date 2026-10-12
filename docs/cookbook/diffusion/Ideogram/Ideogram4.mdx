@@ -14,7 +14,7 @@ import { config } from '/src/snippets/configs/Ideogram/ideogram4.jsx';
 
 ## 1. Quick start
 
-Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform.
+Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform. For Intel Arc Pro B-Series GPUs (BMG), follow the [XPU installation guide](/docs/hardware-platforms/xpu#installation) instead.
 
 Set `HF_TOKEN` with access to the gated Ideogram repositories. Install `bitsandbytes>=0.46.1` and `accelerate>=1.1.0` for NF4 and the shared NF4 text encoder.
 
@@ -22,7 +22,7 @@ Set `HF_TOKEN` with access to the gated Ideogram repositories. Install `bitsandb
 
 <a id="2-prerequisites" />
 
-- NVIDIA CUDA GPU.
+- NVIDIA CUDA GPU, or Intel Arc Pro B-Series GPU (codename: BMG (Battlemage)).
 - SGLang installed with diffusion dependencies.
 - `bitsandbytes>=0.46.1` and `accelerate>=1.1.0` for the NF4 checkpoint and the fal variants' shared NF4 text encoder.
 - `HF_TOKEN` with access to the Ideogram 4 gated repositories.
@@ -128,6 +128,18 @@ HF_TOKEN=$HF_TOKEN sglang serve \
 ```
 
 Replace the model ID with `fal/ideogram-v4-fast` to use the same layouts for Fast. TP2 and Ulysses/SP2 are the validated configurations; Ring SP is not yet validated for this pipeline. Ideogram 4 has 18 attention heads, so any other TP degree must divide 18.
+
+#### Intel Arc Pro B-Series GPUs (BMG)
+
+On Intel Arc Pro B-Series GPUs (BMG), serve fal Instant with TP2 on two GPUs:
+
+```bash Command
+HF_TOKEN=$HF_TOKEN sglang serve \
+  --model-path fal/ideogram-v4-instant \
+  --num-gpus 2 \
+  --tp-size 2 \
+  --port 30010
+```
 
 ### Layerwise offload
 

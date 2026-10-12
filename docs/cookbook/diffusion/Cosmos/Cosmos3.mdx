@@ -14,7 +14,7 @@ import { config } from '/src/snippets/configs/nvidia/cosmos3.jsx';
 
 ## 1. Quick start
 
-Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform.
+Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform. For Intel Arc Pro B-Series GPUs (BMG), follow the [XPU installation guide](/docs/hardware-platforms/xpu#installation) instead.
 
 Choose a [generation or policy request](#4-openai-compatible-requests) matching the checkpoint; the Request tab queries model metadata.
 
@@ -121,6 +121,28 @@ sglang serve \
 ```
 
 For distilled I2V, replace the model path with `nvidia/Cosmos3-Super-Image2Video-4Step`. SGLang detects both checkpoints from `scheduler/scheduler_config.json`, uses the checkpoint's fixed four-step sigma schedule, and forces `guidance_scale=1.0`. Do not tune `num_inference_steps` or `flow_shift` for these checkpoints.
+
+### Intel Arc Pro B-Series GPUs (BMG)
+
+On Intel Arc Pro B-Series GPUs (BMG), serve `Cosmos3-Nano` with TP4 on four GPUs:
+
+```bash Command
+sglang serve \
+  --model-path nvidia/Cosmos3-Nano \
+  --num-gpus 4 \
+  --tp-size 4 \
+  --port 30000
+```
+
+Serve `Cosmos3-Edge` with the same configuration:
+
+```bash Command
+sglang serve \
+  --model-path nvidia/Cosmos3-Edge \
+  --num-gpus 4 \
+  --tp-size 4 \
+  --port 30000
+```
 
 ## 4. OpenAI-Compatible Requests
 

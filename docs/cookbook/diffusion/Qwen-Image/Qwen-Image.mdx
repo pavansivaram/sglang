@@ -14,7 +14,7 @@ import { config } from '/src/snippets/configs/Qwen/qwen-image.jsx';
 
 ## 1. Quick start
 
-Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform.
+Follow the [SGLang Diffusion installation guide](/docs/sglang-diffusion/installation) for your GPU platform. For Intel Arc Pro B-Series GPUs (BMG), follow the [XPU installation guide](/docs/hardware-platforms/xpu#installation) instead.
 
 <a id="2-sglang-diffusion-installation" />
 
@@ -34,7 +34,7 @@ This section provides deployment configurations optimized for different hardware
 
 ### 3.1 Basic Configuration
 
-Qwen-Image is a text-to-image model. The recommended launch configurations vary by hardware. SGLang supports serving Qwen-Image on NVIDIA B200, B300, H200, H100, AMD MI300X, MI325X, MI355X GPUs and Ascend A2/A3 Series NPUs.
+Qwen-Image is a text-to-image model. The recommended launch configurations vary by hardware. SGLang supports serving Qwen-Image on NVIDIA B200, B300, H200, H100, AMD MI300X, MI325X, MI355X GPUs, Intel Arc Pro B-Series GPUs (codename: BMG (Battlemage)), and Ascend A2/A3 Series NPUs.
 
 Use the [command builder](#1-quick-start) above.
 
@@ -119,7 +119,18 @@ On 2x RTX 5090 (PCIe, no P2P) this measured 19.7 s at 1024x1024 with 50 steps
 and no CFG. Add `--dit-cpu-offload true` to cut peak memory to about 22 GB per
 GPU at 21.2 s.
 
-### 3.4 Configuration Tips
+### 3.4 Intel Arc Pro B-Series GPUs (BMG)
+
+On Intel Arc Pro B-Series GPUs (BMG), serve Qwen-Image with TP4 on four GPUs:
+
+```bash Command
+sglang serve \
+  --model-path Qwen/Qwen-Image \
+  --num-gpus 4 \
+  --tp-size 4
+```
+
+### 3.5 Configuration Tips
 
 See [Performance Optimization](/docs/sglang-diffusion/performance-optimization) for acceleration features and their runtime requirements.
 
