@@ -12,18 +12,21 @@ export const Qwen35Deployment = () => {
   //   122B-A10B: H100 tp=4,  H200 tp=4, B200 tp=2, B300 tp=2, GB200 tp=2, GB300 tp=2, MI300X tp=2, MI325X tp=1, MI355X tp=1
   //   35B-A3B:   H100 tp=1 (tp=2 w/ MTP), H200 tp=1, B200 tp=1, B300 tp=1, GB200 tp=1, GB300 tp=1, MI300X tp=1, MI325X tp=1, MI355X tp=1
   //   27B:       H100 tp=1 (tp=2 w/ MTP); tp=1 on all other hardware
-  //   9B/4B/2B/0.8B: tp=1 on all hardware (including MI300X, MI325X, MI355X)
+  //   Arc B:     35B-A3B, 27B, 9B, 4B, 2B, and 0.8B tp=4
+  //   9B/4B/2B/0.8B: tp=1 on all hardware except Arc B (tp=4)
   //
   // GPU requirements (FP8, where available):
   //   397B-A17B: H100 tp=8, H200 tp=8 ep=8, B200 tp=4, B300 tp=4, GB200 tp=4, GB300 tp=4, MI300X tp=4, MI325X tp=2, MI355X tp=2 (tp=4 with HiCache, the long-context agentic recipe)
   //   122B-A10B: H100 tp=2 (tp=4 w/ MTP), H200 tp=2, B200 tp=1, B300 tp=1, GB200 tp=1, GB300 tp=1, MI300X tp=1, MI325X tp=1, MI355X tp=1
   //   35B-A3B:   H100 tp=1, H200 tp=1, B200 tp=1, B300 tp=1, GB200 tp=1, GB300 tp=1, MI300X tp=1, MI325X tp=1, MI355X tp=1
   //   27B:       tp=1 on all hardware (including MI300X, MI325X, MI355X)
+  //   Arc B:     BF16 only (35B-A3B, 27B, 9B, 4B, 2B, and 0.8B)
   //
   // FP4 (397B only): NVFP4 on Blackwell B200 tp=4 (tp=2 ep=2 w/ MTP) / B300 tp=4; AMD MXFP4 on MI355X tp=2
 
   const MOE_MODELS = new Set(['397b', '122b', '35b']);
   const FP8_MODELS = new Set(['397b', '122b', '35b', '27b']);
+  const ARC_B_MODELS = new Set(['35b', '27b', '9b', '4b', '2b', '0.8b']);
 
   // Maps model id -> HuggingFace model name suffix
   const MODEL_SUFFIX = {
@@ -210,7 +213,8 @@ export const Qwen35Deployment = () => {
       mi300x: { bf16: { tp: 1, mem: 0.8 }, fp8: { tp: 1, mem: 0.8 } },
       mi325x: { bf16: { tp: 1, mem: 0.8 }, fp8: { tp: 1, mem: 0.8 } },
       mi355x: { bf16: { tp: 1, mem: 0.8 }, fp8: { tp: 1, mem: 0.8 } },
-      xeon:   { bf16: { tp: 6 }, fp8: { tp: 6 } }
+      xeon:   { bf16: { tp: 6 }, fp8: { tp: 6 } },
+      arc_b:  { bf16: { tp: 4, mem: 0.8 } }
     },
     '9b': {
       h100:   { bf16: { tp: 1, mem: 0.8 } },
@@ -223,7 +227,7 @@ export const Qwen35Deployment = () => {
       mi325x: { bf16: { tp: 1, mem: 0.8 } },
       mi355x: { bf16: { tp: 1, mem: 0.8 } },
       xeon:   { bf16: { tp: 3 } },
-      arc_b:  { bf16: { tp: 1, mem: 0.8 } }
+      arc_b:  { bf16: { tp: 4, mem: 0.8 } }
     },
     '4b': {
       h100:   { bf16: { tp: 1, mem: 0.8 } },
@@ -236,7 +240,7 @@ export const Qwen35Deployment = () => {
       mi325x: { bf16: { tp: 1, mem: 0.8 } },
       mi355x: { bf16: { tp: 1, mem: 0.8 } },
       xeon:   { bf16: { tp: 3 } },
-      arc_b:  { bf16: { tp: 1, mem: 0.8 } }
+      arc_b:  { bf16: { tp: 4, mem: 0.8 } }
     },
     '2b': {
       h100:   { bf16: { tp: 1, mem: 0.8 } },
@@ -248,7 +252,8 @@ export const Qwen35Deployment = () => {
       mi300x: { bf16: { tp: 1, mem: 0.8 } },
       mi325x: { bf16: { tp: 1, mem: 0.8 } },
       mi355x: { bf16: { tp: 1, mem: 0.8 } },
-      xeon:   { bf16: { tp: 3 } }
+      xeon:   { bf16: { tp: 3 } },
+      arc_b:  { bf16: { tp: 4, mem: 0.8 } }
     },
     '0.8b': {
       h100:   { bf16: { tp: 1, mem: 0.8 } },
@@ -260,7 +265,8 @@ export const Qwen35Deployment = () => {
       mi300x: { bf16: { tp: 1, mem: 0.8 } },
       mi325x: { bf16: { tp: 1, mem: 0.8 } },
       mi355x: { bf16: { tp: 1, mem: 0.8 } },
-      xeon:   { bf16: { tp: 3 } }
+      xeon:   { bf16: { tp: 3 } },
+      arc_b:  { bf16: { tp: 4, mem: 0.8 } }
     }
   };
 
@@ -313,12 +319,12 @@ export const Qwen35Deployment = () => {
 
   const handleRadioChange = (optionName, value) => {
     setValues(prev => {
-      if (prev.hardware === 'arc_b' && optionName === 'model' && !['35b', '9b', '4b'].includes(value)) {
+      if (prev.hardware === 'arc_b' && optionName === 'model' && !ARC_B_MODELS.has(value)) {
         return prev;
       }
 
       const next = { ...prev, [optionName]: value };
-      if (optionName === 'hardware' && value === 'arc_b' && !['35b', '9b', '4b'].includes(next.model)) {
+      if (optionName === 'hardware' && value === 'arc_b' && !ARC_B_MODELS.has(next.model)) {
         next.model = '35b';
       }
       return next;
@@ -664,7 +670,7 @@ export const Qwen35Deployment = () => {
                 const isArcBModelLocked =
                   values.hardware === 'arc_b' &&
                   option.name === 'model' &&
-                  !['35b', '9b', '4b'].includes(item.id);
+                  !ARC_B_MODELS.has(item.id);
                 const isDisabled = !!item.disabled || isArcBModelLocked;
                 return (
                   <label
